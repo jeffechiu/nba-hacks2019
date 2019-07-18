@@ -5,8 +5,10 @@ CREATE DATABASE Basketball;
 
 \i create.sql
 
-\copy event_codes from 'Event_Codes.csv' csv
+\copy event_codes from 'Event_Codes.csv' csv header
 
-\copy game_lineup from 'Game_Lineup.csv' csv
+\copy game_lineup from 'Game_Lineup.csv' csv header
 
-\copy play_by_play from 'Play_by_Play.csv' csv
+\copy play_by_play from 'Play_by_Play.csv' csv header
+
+\copy (SELECT * FROM Play_by_Play WHERE game_id='006728e4c10e957011e1f24878e6054a' and period=1) to 'game_1_quarter_1.csv' with csv header

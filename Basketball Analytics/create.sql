@@ -1,10 +1,12 @@
+DROP TABLE IF EXISTS Event_Codes;
 CREATE TABLE Event_Codes (
-	event_msg_type int,
-	action_type int,
+	event_msg_type integer,
+	action_type integer,
 	event_msg_type_description varchar(40),
 	action_type_description varchar(40)
 );
 
+DROP TABLE IF EXISTS Game_Lineup;
 CREATE TABLE Game_Lineup (
 	game_id varchar(40),
 	period int,
@@ -13,6 +15,7 @@ CREATE TABLE Game_Lineup (
 	status varchar(40)
 );
 
+DROP TABLE IF EXISTS Play_by_Play;
 CREATE TABLE Play_by_Play (
 	game_id varchar(40),
 	event_num int,
@@ -20,6 +23,7 @@ CREATE TABLE Play_by_Play (
 	period int,
 	wc_time int,
 	pc_time int,
+	action_type int,
 	option1 int,
 	option2 int,
 	option3 int,
@@ -33,6 +37,7 @@ CREATE TABLE Play_by_Play (
 	person3_type int
 );
 
+DROP TABLE IF EXISTS Given_Lineup;
 CREATE TABLE Given_Lineup (
 	game_id varchar(40),
 	period int,
