@@ -17,7 +17,7 @@ get_one_sect = cur.mogrify('''
 
 		SELECT *
 		  FROM Play_by_Play
-		 WHERE game_id='006728e4c10e957011e1f24878e6054a' and period=1;
+		 WHERE game_id='006728e4c10e957011e1f24878e6054a';
 '''
 	)
 
@@ -27,9 +27,9 @@ rows = cur.fetchall()
 game_table = cur.mogrify('''
 
 	INSERT INTO Games(game_id)
-	SELECT DISTINCT game_id
+	SELECT DISTINCT team_id
 	  FROM Play_by_Play
-	 ORDER by game_id
+	 ORDER by team_id
 	  '''
 	)
 cur.execute(game_table)
