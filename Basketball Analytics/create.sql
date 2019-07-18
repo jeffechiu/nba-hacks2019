@@ -56,3 +56,8 @@ CREATE TABLE Given_Lineup (
 	person2_4 varchar(40),
 	person2_5 varchar(40)
 );
+
+DROP TABLE IF EXISTS Games;
+CREATE TABLE Games (
+	game_id varchar(40)
+);

@@ -23,4 +23,24 @@ get_one_sect = cur.mogrify('''
 
 cur.execute(get_one_sect)
 rows = cur.fetchall()
+
+game_table = cur.mogrify('''
+
+	INSERT INTO Games(game_id)
+	SELECT DISTINCT game_id
+	  FROM Play_by_Play
+	 ORDER by game_id
+	  '''
+	)
+cur.execute(game_table)
+
+num_games = cur.mogrify('''
+
+	SELECT COUNT(*)
+	  FROM Games
+
+	''')
+
+cur.execute(num_games)
+rows = cur.fetchall()
 print_rows(rows)
