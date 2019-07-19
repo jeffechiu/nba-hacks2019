@@ -10,6 +10,14 @@ def openCSV(file):
 			game += [row]
 	return game
 
+#takes array of all pbp, returns list of games(82)
+def getGames(gameList):
+	return
+
+
+def parseGames(game):
+	return
+
 #gets IDS of team
 def getTeamIDs(game, default):
 	t1 = ""
@@ -20,6 +28,7 @@ def getTeamIDs(game, default):
 			t1 = row['team_id']
 		if t1 != row['team_id'] and t2 == "" and row['team_id'] != default:
 			t2 = row['team_id']
+			break
 	return (t1, t2)
 
 #gets ID of team actions in player columns
@@ -41,13 +50,13 @@ def sortEventNums(game):
 	eventNums = sorted(eventNums)
 	return eventNums
 
-def getAllEventsUsed(game):
-	events = []
-	for row in game:
-		if int(row['event_msg_type']) not in events:
-			events += [int(row['event_msg_type'])]
-	events = sorted(events)
-	return events
+#def getAllEventsUsed(game):
+#	events = []
+#	for row in game:
+#		if int(row['event_msg_type']) not in events:
+#			events += [int(row['event_msg_type'])]
+#	events = sorted(events)
+#	return events
 
 #recursive function that modifies game so that all necessary substitutions come after free throws
 #STILL NEED TO ADD INFO ABOUT TECHNICALS
@@ -81,21 +90,21 @@ def getPossessions(eventNums, game, t1, t2):
 	poss = []
 	for x in range(len(eventNums)):
 		for row in game:
-			if row['period'] == '2':
+			if row['period'] == '2' or row['period'] == '1':
 				if row['event_num'] == str(eventNums[x]):
 					if team_poss == "":
 						if (row['team_id'] == t1 or row['team_id'] == t2):
-							poss += [row['event_num']]
+							poss += [int(row['event_num'])]
 							team_poss = row['team_id']
 							break
 						else:
 							break
 					elif row['event_msg_type'] == '12' and row['period'] != '1':
-						poss += [row['event_num']]
+						poss += [int(row['event_num'])]
 						team_poss = row['team_id']
 						break
 					elif row['event_msg_type'] == '13':
-						poss += [row['event_num']]
+						poss += [int(row['event_num'])]
 						possessions += [poss]
 						poss = []
 						break
@@ -103,12 +112,31 @@ def getPossessions(eventNums, game, t1, t2):
 						team_poss = row['team_id']
 						for row1 in game:
 							if row1['event_num'] == str(eventNums[x-1]):
-								poss += [row1['event_num']]
+								poss += [int(row1['event_num'])]
 						possessions += [poss]
 						poss = []
-						poss += [row['event_num']]
+						poss += [int(row['event_num'])]
 						break
 	return possessions
+
+#get the number of possessions in range between 2 event numbers
+def getNumPossessions(eventNum1, eventNum2, possessions):
+	en1 = int(eventNum1)
+	en2 = int(eventNum2)
+	p = 0
+	for poss in possessions:
+		if poss[0] <= en1 and poss[1] >= en1:
+			p = 1
+		elif p == 0:
+			continue
+		elif poss[0] > en2:
+			return p
+		elif poss[0] < en2:
+			p += 1
+	return
+
+def getPoints(eventNum1, eventNum2):
+	return
 
 #gets lineups of game
 def getLineups(eventNums, game, t1, t2, tp1, default, starters):
@@ -116,7 +144,7 @@ def getLineups(eventNums, game, t1, t2, tp1, default, starters):
 	currLineup = ["null", "null", "null", "null", "null", "null", "null", "null", "null", t1, "null", "null"]
 	for x in range(len(eventNums)):
 		for row in game:
-			if row['event_num'] == str(eventNums[x]):
+			if row['event_num'] == str(eventNums[x]) and row['period'] == '1':
 
 				if row['event_msg_type'] == '8':
 					if (row['person1'] == currLineup[4] or row['person1'] == currLineup[5] or row['person1'] == currLineup[6] or row['person1'] == currLineup[7] or row['person1'] == currLineup[8]):
@@ -157,8 +185,14 @@ def getLineups(eventNums, game, t1, t2, tp1, default, starters):
 
 				#start period
 				elif row['event_msg_type'] == '12':
-					currLineup[0] = row['pc_time']
-					currLineup[2] = row['event_num']
+					if row['team_id'] != '1473d70e5646a26de3c52aa1abd85b1f':
+						currLineup[0] = row['pc_time']
+						currLineup[2] = row['event_num']
+					elif row['team_id'] :
+						for row1 in game:
+							if row1['event_num'] == str(eventNums[x+1]):
+								currLineup[0] = row1['pc_time']
+								currLineup[2] = row1['event_num']
 					index = 4
 					for start in starters:
 						if start['ï»¿Game_id'] == row['game_id'] and start['Period'] == row['period'] and start['Team_id'] == t1:
@@ -183,18 +217,48 @@ def getLineups(eventNums, game, t1, t2, tp1, default, starters):
 	for x in counter:
 		lineup.remove(x)
 
+	for line in lineup:
+		if line[0] != '7200':
+			line[2] = str(int(line[2])+1)
+
+
 	return lineup
 
-#calculate score between 2 eventNums for a team
-def calculateScore(t1, eventNum1, eventNum2):
-	return
-
-#get the number of possessions in range between 2 event numbers
-def getNumPossessions(eventNum1, eventNum2):
-	return
-
 #create table of team_id, player_id, off_total, def_total, possessions_played
-def createRatingsChart():
+def createTotals(lineup, possessions):
+	performance = []
+	row = []
+	for line in lineup:
+		poss = getNumPossessions(line[2], line[3], possessions)
+		for i in range(4, 9):
+			row += [line[9], line[i], poss, line[10], line[11]]
+			performance += [row]
+			row = []
+	for j in range(5, len(performance)):
+		if performance[j][1] == performance[j-5][1] and performance[j][3] == performance[j-5][3] and performance[j][4] == performance[j-5][4]:
+			performance[j][2] -= 1
+	return performance
+
+def removeDupes(performance):
+	unique = []
+	for row in performance:
+		if row[1] not in unique:
+			unique += [row[1]]
+		else:
+			i = unique.index(row[1])
+			performance[i][2] += row[2]
+			performance.remove(row)
+			return removeDupes(performance)
+	return performance
+
+
+def accumulate():
+	return
+
+def writeCSV(file, array):
+	with open(file, 'w', newline='') as csvFile:
+	    writer = csv.writer(csvFile, quotechar='|', quoting=csv.QUOTE_MINIMAL)
+	    writer.writerows(array)
 	return
 
 
@@ -213,21 +277,22 @@ def main():
 	tp2 = teamPlayerIDS[1]
 	possessions = getPossessions(eventNums, game, t1, t2)
 	print(possessions)
-	print(len(possessions))
 	#events = getAllEventsUsed(game)
 	lineupT1 = getLineups(eventNums, game, t2, t1, tp2, default1, starters)
 	lineupT2 = getLineups(eventNums, game, t1, t2, tp1, default1, starters)
 	lineup = []
-	lineup += [['time_s', 'time_e', 'event_s', 'event_e', 'player_1', 'player_2', 'player_3', 'player_4', 'player_5', 'team_id', 'game_id', 'period']]
+	#lineup += [['time_s', 'time_e', 'event_s', 'event_e', 'player_1', 'player_2', 'player_3', 'player_4', 'player_5', 'team_id', 'game_id', 'period']]
 	for line in lineupT1:
 		lineup += [line]
 	for line in lineupT2:
 		lineup += [line]
-
-	with open('lineups.csv', 'w', newline='') as csvFile:
-	    writer = csv.writer(csvFile, quotechar='|', quoting=csv.QUOTE_MINIMAL)
-	    writer.writerows(lineup)
-	    print("Successfully exported into lineups.csv")
+	performance = createTotals(lineup, possessions)
+	perf2 = removeDupes(performance)
+	finalPerformance = []
+	finalPerformance += [['team_id', 'player_id', 'possessions']]
+	for row in perf2:
+		finalPerformance += [row]
+	writeCSV('lineup.csv', finalPerformance)
 
 if __name__ == "__main__":
 	main()
