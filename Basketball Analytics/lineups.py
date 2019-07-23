@@ -90,34 +90,49 @@ def getPossessions(eventNums, game, t1, t2):
 	poss = []
 	for x in range(len(eventNums)):
 		for row in game:
-			if row['period'] == '2' or row['period'] == '1':
-				if row['event_num'] == str(eventNums[x]):
-					if team_poss == "":
-						if (row['team_id'] == t1 or row['team_id'] == t2):
-							poss += [int(row['event_num'])]
-							team_poss = row['team_id']
-							break
-						else:
-							break
-					elif row['event_msg_type'] == '12' and row['period'] != '1':
+			if row['event_num'] == str(eventNums[x]):
+				if team_poss == "":
+					if (row['team_id'] == t1 or row['team_id'] == t2):
 						poss += [int(row['event_num'])]
 						team_poss = row['team_id']
 						break
-					elif row['event_msg_type'] == '13':
-						poss += [int(row['event_num'])]
-						possessions += [poss]
-						poss = []
+					else:
 						break
-					elif row['team_id'] != team_poss:
-						team_poss = row['team_id']
-						for row1 in game:
-							if row1['event_num'] == str(eventNums[x-1]):
-								poss += [int(row1['event_num'])]
-						possessions += [poss]
-						poss = []
-						poss += [int(row['event_num'])]
-						break
+				elif row['event_msg_type'] == '12' and int(row['period']) > 1 and int(row['period']) < 5:
+					poss += [int(row['event_num'])]
+					team_poss = row['team_id']
+					break
+				elif row['event_msg_type'] == '13':
+					poss += [int(row['event_num'])]
+					poss += [team_poss]
+					possessions += [poss]
+					poss = []
+					break
+				elif row['team_id'] != team_poss:
+					for row1 in game:
+						if row1['event_num'] == str(eventNums[x-1]):
+							poss += [int(row1['event_num'])]
+					poss += [team_poss]
+					possessions += [poss]
+					poss = []
+					poss += [int(row['event_num'])]
+					team_poss = row['team_id']
+					break
 	return possessions
+
+def getOffPoss(possessions, t1):
+	final = []
+	for poss in possessions:
+		if poss[2] == t1:
+			final += [poss]
+	return final
+
+def getDefPoss(possessions, t1):
+	final = []
+	for poss in possessions:
+		if poss[2] != t1:
+			final += [poss]
+	return final
 
 #get the number of possessions in range between 2 event numbers
 def getNumPossessions(eventNum1, eventNum2, possessions):
@@ -133,10 +148,77 @@ def getNumPossessions(eventNum1, eventNum2, possessions):
 			return p
 		elif poss[0] < en2:
 			p += 1
-	return
+	return p
 
-def getPoints(eventNum1, eventNum2):
-	return
+def getOffPossessions(eventNum1, eventNum2, possessions, t1):
+	en1 = int(eventNum1)
+	en2 = int(eventNum2)
+	p = 0
+	active = "false"
+	for poss in possessions:
+		if poss[2] == t1:
+			if poss[0] <= en1 and poss[1] >= en1:
+				p = 1
+				active = "true"
+			elif poss[0] > en2 and active == "true":
+				return p
+			elif poss[0] < en2 and active == "true":
+				p += 1
+		else:
+			if poss[0] <= en1 and poss[1] >= en1:
+				active = "true"
+	return p
+
+def getDefPossessions(eventNum1, eventNum2, possessions, t1):
+	en1 = int(eventNum1)
+	en2 = int(eventNum2)
+	p = 0
+	active = "false"
+	for poss in possessions:
+		if poss[2] != t1:
+			if poss[0] <= en1 and poss[1] >= en1:
+				p = 1
+				active = "true"
+			elif poss[0] > en2 and active == "true":
+				return p
+			elif poss[0] < en2 and active == "true":
+				p += 1
+		else:
+			if poss[0] <= en1 and poss[1] >= en1:
+				active = "true"
+	return p
+
+def getPoints(eventNums, game):
+	points = []
+	basket = []
+	for x in range(len(eventNums)):
+		for row in game:
+			if row['event_num'] == str(eventNums[x]):
+				if row['event_msg_type'] == '1' or (row['event_msg_type'] == '3' and row['option1'] == '1'):
+					basket += [int(row['option1'])]
+					basket += [row['team_id']]
+					basket += [int(row['event_num'])]
+					points += [basket]
+					basket = []
+	return points
+
+def getOffDef(points, eventNum1, eventNum2, t1):
+	offense = 0
+	defense = 0
+	en1 = int(eventNum1)
+	en2 = int(eventNum2)
+	for point in points:
+		if point[2] >= en1 and point[2] <= en2:
+			if t1 == point[1]:
+				offense += point[0]
+			elif t1 != point[1]:
+				defense += point[0]
+		elif point[2] < en1:
+			continue
+		elif point[2] > en2:
+			break
+	return [offense, defense]
+
 
 #gets lineups of game
 def getLineups(eventNums, game, t1, t2, tp1, default, starters):
@@ -144,7 +226,7 @@ def getLineups(eventNums, game, t1, t2, tp1, default, starters):
 	currLineup = ["null", "null", "null", "null", "null", "null", "null", "null", "null", t1, "null", "null"]
 	for x in range(len(eventNums)):
 		for row in game:
-			if row['event_num'] == str(eventNums[x]) and row['period'] == '1':
+			if row['event_num'] == str(eventNums[x]):
 
 				if row['event_msg_type'] == '8':
 					if (row['person1'] == currLineup[4] or row['person1'] == currLineup[5] or row['person1'] == currLineup[6] or row['person1'] == currLineup[7] or row['person1'] == currLineup[8]):
@@ -224,21 +306,78 @@ def getLineups(eventNums, game, t1, t2, tp1, default, starters):
 
 	return lineup
 
-#create table of team_id, player_id, off_total, def_total, possessions_played
-def createTotals(lineup, possessions):
+def ftSubNums(game, eventNums):
+	allSubs = []
+	curr = []
+	for x in range(len(eventNums)):
+		for row in game:
+			if row['event_num'] == str(eventNums[x]):
+				if row['event_msg_type'] == '3':
+					for row1 in game:
+						if row1['event_num'] == str(eventNums[x+1]) and row1['event_msg_type'] == '8':
+							curr += [row1['event_num']]
+							i = 2
+							num = row1['event_num']
+							for row2 in game:
+								if row2['event_num'] == str(eventNums[x+i]):
+									if row2['event_msg_type'] != '8':
+										curr += [num]
+										allSubs += [curr]
+										curr = []
+										break
+									else:
+										i += 1
+										num = row2['event_num']
+							break
+
+	return allSubs
+
+
+#create table of team_id, player_id, game_id, period, event_num_sub, off_total, def_total, off_poss, def_poss
+def createTotals(lineup, possessions, game, eventNums, points):
+	ftSubs = ftSubNums(game, eventNums)
 	performance = []
 	row = []
-	for line in lineup:
-		poss = getNumPossessions(line[2], line[3], possessions)
+	for l in range(len(lineup)):
+		poss = getNumPossessions(lineup[l][2], lineup[l][3], possessions)
+		offPoss = getOffPossessions(lineup[l][2], lineup[l][3], possessions, lineup[l][9])
+		defPoss = getDefPossessions(lineup[l][2], lineup[l][3], possessions, lineup[l][9])
 		for i in range(4, 9):
-			row += [line[9], line[i], poss, line[10], line[11]]
+			offense = getOffDef(points, lineup[l][2], lineup[l][3], lineup[l][9])[0]
+			defense = getOffDef(points, lineup[l][2], lineup[l][3], lineup[l][9])[1]
+			if l != 0:
+				row += [lineup[l][9], lineup[l][i], lineup[l][10], lineup[l][11], lineup[l-1][3], offense, defense, offPoss, defPoss, poss]
+			else:
+				row += [lineup[l][9], lineup[l][i], lineup[l][10], lineup[l][11], "null", offense, defense, offPoss, defPoss, poss]
 			performance += [row]
 			row = []
 	for j in range(5, len(performance)):
-		if performance[j][1] == performance[j-5][1] and performance[j][3] == performance[j-5][3] and performance[j][4] == performance[j-5][4]:
-			performance[j][2] -= 1
+		if performance[j][1] == performance[j-5][1] and performance[j][2] == performance[j-5][2] and performance[j][3] == performance[j-5][3]:
+			offSubs = getOffPoss(possessions, performance[j][0])
+			#print(offSubs)
+			defSubs = getDefPoss(possessions, performance[j][0])
+			#print(defSubs)
+			for oSub in offSubs:
+				if int(performance[j][4]) >= oSub[0] and int(performance[j][4]) <= oSub[1]:
+					pns = "off"
+			for dSub in defSubs:
+				if int(performance[j][4]) >= dSub[0] and int(performance[j][4]) <= dSub[1]:
+					pns = "def"
+			for sub in ftSubs:
+				if int(performance[j][4]) >= int(sub[0]) and int(performance[j][4]) <= int(sub[1]):
+					 performance[j][9] += 1
+					 if pns == "off":
+					 	performance[j][7] += 1
+					 elif pns == "def":
+					 	performance[j][8] += 1
+			performance[j][9] -= 1
+			if pns == "off":
+				performance[j][7] -= 1
+			elif pns == "def":
+				performance[j][8] -= 1
 	return performance
 
+#TO BE LARGELY EDITED
 def removeDupes(performance):
 	unique = []
 	for row in performance:
@@ -246,9 +385,16 @@ def removeDupes(performance):
 			unique += [row[1]]
 		else:
 			i = unique.index(row[1])
-			performance[i][2] += row[2]
+			performance[i][5] += row[5]
+			performance[i][6] += row[6]
+			performance[i][7] += row[7]
+			performance[i][8] += row[8]
+			performance[i][9] += row[9]
 			performance.remove(row)
 			return removeDupes(performance)
+	for row1 in performance:
+		row1.pop(3)
+		row1.pop(3)
 	return performance
 
 
@@ -261,6 +407,20 @@ def writeCSV(file, array):
 	    writer.writerows(array)
 	return
 
+def displayGame(game):
+	final = []
+	line = []
+	final += [['event_num', 'event_msg_type', 'pc_time', 'action_type', 'person1', 'person2']]
+	for row in game:
+		line += [row['event_num']]
+		line += [row['event_msg_type']]
+		line += [row['pc_time']]
+		line += [row['action_type']]
+		line += [row['person1']]
+		line += [row['person2']]
+		final += [line]
+		line = []
+	return final
 
 def main():
 	default = '1473d70e5646a26de3c52aa1abd85b1f'
@@ -276,7 +436,13 @@ def main():
 	tp1 = teamPlayerIDS[0]
 	tp2 = teamPlayerIDS[1]
 	possessions = getPossessions(eventNums, game, t1, t2)
-	print(possessions)
+	#print(possessions)
+	offSubs = getOffPoss(possessions, t1)
+	#print(offSubs)
+	#print(getNumPossessions('544', '584', possessions))
+	points = getPoints(eventNums, game)
+	#print(points)
+	#print(possessions)
 	#events = getAllEventsUsed(game)
 	lineupT1 = getLineups(eventNums, game, t2, t1, tp2, default1, starters)
 	lineupT2 = getLineups(eventNums, game, t1, t2, tp1, default1, starters)
@@ -286,13 +452,16 @@ def main():
 		lineup += [line]
 	for line in lineupT2:
 		lineup += [line]
-	performance = createTotals(lineup, possessions)
+	subs = ftSubNums(game, eventNums)
+	performance = createTotals(lineup, possessions, game, eventNums, points)
 	perf2 = removeDupes(performance)
 	finalPerformance = []
-	finalPerformance += [['team_id', 'player_id', 'possessions']]
+	finalPerformance += [['team_id', 'player_id', 'game_id', 'offense', 'defense', 'offPos', 'defPos', 'totalPoss']]
 	for row in perf2:
 		finalPerformance += [row]
+	game = displayGame(game)
 	writeCSV('lineup.csv', finalPerformance)
+	writeCSV('game.csv', game)
 
 if __name__ == "__main__":
 	main()
