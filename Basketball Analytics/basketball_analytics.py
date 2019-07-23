@@ -20,12 +20,14 @@ def main():
   game_lineups = get_lineups(sys.argv[2])
   play_by_play = convert_pbp(sys.argv[3])
 
-  for game in play_by_play:
-    for period in play_by_play[game]:
-      for play in play_by_play[game][period]:
-        print_event(play, period, game, ev_codes)
+  # for game in play_by_play:
+  #   for period in play_by_play[game]:
+  #     for play in play_by_play[game][period]:
+  #       print_event(play, period, game, ev_codes)
+  #   break
 
-    break
+  for code in ev_codes:
+    print(code, ev_codes[code])
 
   output = sys.argv[4]
 

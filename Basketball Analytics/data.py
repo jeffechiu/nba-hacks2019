@@ -1,8 +1,7 @@
 import csv
 
 #code to turn the event codes csv file into a more usable dictionary format
-#ev_dict[msg_type] = (msg_desc, msg_dict)
-#msg_dict[action_type] = action_desc
+#ev_dict[(msg_type, action_type)] = msg_desc: action_desc
 def make_ev_dict(ev_raw):
   ev_dict = dict()
   with open(ev_raw, newline='') as f:

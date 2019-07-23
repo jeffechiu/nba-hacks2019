@@ -3,7 +3,7 @@ class Game(object):
     self.id = game_id
     self.team1 = team1
     self.team2 = team2
-    self.in_free_throw = False
+    self.delay_subs = False
     self.queued_subs = set()
     self.players_appeared = dict()
 
