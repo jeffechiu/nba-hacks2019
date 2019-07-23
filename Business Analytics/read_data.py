@@ -3,7 +3,7 @@ import csv
 import datetime 
 import calendar 
 #reads csv file and feature engineering 
-
+import pandas as pd
 
 def read_data(path):
     with open(path, 'r') as f:
@@ -11,15 +11,19 @@ def read_data(path):
         #[(y, [feature vector]),...]
         X = []
         Y = []
+        panda = []
         for i, line in enumerate(data):
             if i == 0: #first line is title
                 continue 
             else:
                 example = []
                 Y.append(int(line[0]))
-                example.append(feature_engineer(line[1:]))
-                X.append(example)
-    return np.array(Y), np.array(X)
+                feature_vector = feature_engineer(line[1:])
+                X.append(feature_vector)
+                a = (np.array([int(line[0])]))
+                b = feature_vector
+                panda.append(np.concatenate((a,b)))
+    return np.array(Y), np.array(X), panda
 
 
 
@@ -48,5 +52,6 @@ def feature_engineer(x):
 
 
 
-#Y, X = read_data("training_set.csv")
+Y, X, data = read_data("training_set.csv")
+df = pd.DataFrame(data) 
 
