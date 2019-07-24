@@ -7,6 +7,9 @@ class Game(object):
     self.queued_subs = set()
     self.players_appeared = dict()
     self.team1_poss = True #to keep track of possession
+    self.first_jump = False
+    self.tip_winner = False #whether the initial winner of the jump ball is team1
+    self.reset_personals()
 
   #for debugging purposes
   def __repr__(self):
@@ -71,6 +74,10 @@ class Game(object):
   #changes possession
   def flip_possession(self):
     self.team1_poss = not self.team1_poss
+
+  #resets team personal foul counts at beginning of periods
+  def reset_personals(self):
+    self.personal_fouls = {self.team1: 0, self.team2: 0}
 
   #for debugging, counts number of player with in_game == True (total, team1, team2)
   def count_on_court(self):

@@ -101,7 +101,8 @@ def convert_pbp(pbp_raw):
               "team_id": row[10],
               "person1": row[11],
               "person2": row[12]}
-      game[period].append(play)
+      if event_msg_type in ["1", "3", "4", "5", "6", "8", "10", "12", "13"]: #only relevant actions
+        game[period].append(play)
 
   for game in games_pbp:
     for per in games_pbp[game]:
