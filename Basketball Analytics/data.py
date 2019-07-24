@@ -1,4 +1,5 @@
 import csv
+from game import *
 
 #code to turn the event codes csv file into a more usable dictionary format
 #ev_dict[(msg_type, action_type)] = msg_desc: action_desc
@@ -51,6 +52,14 @@ def get_lineups(lineups_raw):
         team_list.append(person_id)
 
   return lineups_dict
+
+#initializes game objects
+def games_init(lineups):
+  games_dict = dict()
+  for game_id in lineups:
+    teams = list(lineups[game_id][0].keys())
+    games_dict[game_id] = Game(game_id, teams[0], teams[1])
+  return games_dict
 
 #function to do insertion sort 
 def pbp_sort(pbp_quarter): 

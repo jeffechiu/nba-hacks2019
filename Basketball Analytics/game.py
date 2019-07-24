@@ -1,11 +1,12 @@
 class Game(object):
-  def __init__(self, game_id, team1, team2):
+  def __init__(self, game_id, team1="", team2=""):
     self.id = game_id
     self.team1 = team1
     self.team2 = team2
     self.delay_subs = False
     self.queued_subs = set()
     self.players_appeared = dict()
+    self.team1_poss = True #to keep track of possession
 
   #for debugging purposes
   def __repr__(self):
@@ -19,14 +20,14 @@ class Game(object):
 
   #creates a player and adds him to self.players_appeared
   def create_player(self, pid, team):
-    if pid in self.playersAppeared:
+    if pid in self.players_appeared:
       return
     self.players_appeared[pid] = Player(pid, self.id, team)
 
   #updates lineups at the start of periods
   def update_lineup(self, lineups):
-    t1_lineup = lineups[self.team1]
-    t2_lineup = lineups[self.team2]
+    t1_lineup = set(lineups[self.team1])
+    t2_lineup = set(lineups[self.team2])
 
     #starts by resetting all current players to not be on the court
     for player in self.players_appeared:
@@ -45,13 +46,13 @@ class Game(object):
   #handles substitutions
   def substitute(self, player_out, player_in):
     team = self.players_appeared[player_out].team #makes sure the two players are on the same team
-    self.create_player(playerI_in, team) #player objects are created for players that haven't appeared yet
+    self.create_player(player_in, team) #player objects are created for players that haven't appeared yet
     self.players_appeared[player_out].in_game = False
     self.players_appeared[player_in].in_game = True
 
   #handles queued substitutions after free throws
   def do_queued_subs(self):
-    for sub in self.queued_subs: #sub: (player_in, player_out)
+    for sub in self.queued_subs: #sub: (player_out, player_in)
       self.substitute(sub[0], sub[1])
     self.queued_subs = set()
 
@@ -61,10 +62,15 @@ class Game(object):
       player = self.players_appeared[pid]
       if player.team == team:
         player.off_poss()
-        player.off_points(points)
+        player.off_score(points)
       else:
         player.def_poss()
-        player.def_points(points)
+        player.def_score(points)
+    self.flip_possession()
+
+  #changes possession
+  def flip_possession(self):
+    self.team1_poss = not self.team1_poss
 
   #for debugging, counts number of player with in_game == True (total, team1, team2)
   def count_on_court(self):
@@ -121,7 +127,13 @@ class Player(object):
       self.def_points += points
 
   def off_rtg(self):
-    return self.off_points * (100/self.off_possessions)
+    if self.off_possessions == 0:
+      return 0
+    else:
+      return self.off_points * (100/self.off_possessions)
 
   def def_rtg(self):
-    return self.def_points * (100/self.def_possessions)
+    if self.def_possessions == 0:
+      return 0
+    else:
+      return self.def_points * (100/self.def_possessions)
